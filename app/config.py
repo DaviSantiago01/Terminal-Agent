@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     )
     model_name: str = Field(default="llama-3.1-8b-instant", alias="MODEL_NAME")
     groq_api_key: SecretStr | None = Field(default=None, alias="GROQ_API_KEY")
+    min_message_interval_seconds: float = Field(default=1.5, alias="MIN_MESSAGE_INTERVAL_SECONDS")
 
 
 @lru_cache(maxsize=1)

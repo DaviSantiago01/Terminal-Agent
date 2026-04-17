@@ -2,32 +2,22 @@
 
 # Terminal Agent
 
-Terminal Agent is a terminal-first AI assistant built with LangChain, LangGraph, Typer, SQLAlchemy, and Groq. The project focuses on a practical chat workflow where the user talks to an agent, the agent can call task tools when needed, and the final interaction is stored in a database.
+Terminal Agent is a terminal-first AI assistant built for practical conversations, task-oriented tool usage, and persistent interaction history. The current product focuses on a simple CLI workflow where the user talks to an agent, sees live logs, and receives a final answer saved in the database.
 
-## Documentation Model
+## Quick View
 
-- `docs/SDD.md` is the tracked technical source of truth for implementation behavior
-- `docs/PRD.MD` is a private product-direction document kept local and ignored by Git
-- Changes to behavior, interfaces, architecture, or constraints should update documentation before or together with code changes
+- Surface: terminal CLI
+- Current focus: stable assistant loop with tools and persistence
+- Best entry for project docs: [`docs/CONTEXT.md`](./docs/CONTEXT.md)
+- Best entry for product direction: [`docs/PRD.md`](./docs/PRD.md)
 
-## Features
-
-- Terminal chat interface
-- Live execution logs while the agent is working
-- Tool-based task operations
-- Persistent chat result storage
-- Configurable environment through `.env`
-- Global terminal command: `terminal-agent`
-
-## Tech Stack
+## Stack
 
 - Python 3.11+
 - Typer
-- LangChain
-- LangGraph
+- LangChain and LangGraph
 - Groq
 - SQLAlchemy
-- Pydantic Settings
 - PostgreSQL or SQLite
 
 ## Installation
@@ -55,55 +45,21 @@ You can also run the module directly:
 
 `py -m app.cli`
 
-## Windows Notes
-
-When installed, the project creates `terminal-agent.exe` inside your Python `Scripts` directory.
-
-To discover that folder, run:
-
-`py -c "import sysconfig; print(sysconfig.get_path('scripts'))"`
-
-That directory must be in `PATH` if you want `terminal-agent` to work in any new PowerShell, CMD, or VS Code terminal.
-
-## Project Structure
+## Terminal Example
 
 ```text
-app/
-  agent.py
-  cli.py
-  config.py
-  db.py
-  tools.py
-docs/
-  PRD.MD
-  SDD.md
-README.md
-README.pt-BR.md
-pyproject.toml
+>> create a task to study English every day
+voce: create a task to study English every day
+log: agent: usando modelo
+log: modelo: chamando task_create(task_key='study-english', input_text='Study English every day', is_active=True)
+log: task_create: {"status":"created", ...}
+terminal agent: Criei a task "study-english" para estudar inglês todos os dias.
 ```
 
-## Technical Source Of Truth
+## Docs
 
-If you are contributing to the implementation, read `docs/SDD.md` first. It defines the runtime flow, module responsibilities, tool contracts, persistence behavior, configuration model, and system constraints.
-
-## Main Flow
-
-1. The user sends a message in the terminal
-2. The CLI calls the agent execution flow
-3. The agent decides whether it should call tools
-4. Tool results are returned in structured JSON for the model to interpret
-5. The final response is printed in the terminal
-6. The final interaction result is saved in the database
-
-## Notes
-
-- The agent is configured to explain tool results naturally instead of showing raw JSON
-- The agent decides when each task tool should be called
-- The terminal displays internal logs so you can understand what the agent is doing
-
-## Contribution Workflow
-
-1. Review `docs/SDD.md` before changing core behavior
-2. Update `docs/SDD.md` when behavior, interfaces, architecture, persistence rules, or configuration rules change
-3. Keep code comments and docstrings in Portuguese
-4. Keep public project documentation in English
+- [Product direction](./docs/PRD.md)
+- [Architecture](./docs/ARCH.md)
+- [Features and roadmap](./docs/FEATURES.md)
+- [Feature briefs](./docs/feature/README.md)
+- [Current context](./docs/CONTEXT.md)
