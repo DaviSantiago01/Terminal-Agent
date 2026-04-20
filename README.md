@@ -1,65 +1,59 @@
-[Change the README language / Troque o idioma do README: English](./README.md) | [Português (Brasil)](./README.pt-BR.md)
+[Troque o idioma do README / Change the README language: [Português (Brasil)](./README.md) | [English](./README.en.md)]
 
 # Terminal Agent
 
-Terminal Agent is a terminal-first AI assistant built for practical conversations, task-oriented tool usage, and persistent interaction history. The current product focuses on a simple CLI workflow where the user talks to an agent, sees live logs, and receives a final answer saved in the database.
+Terminal Agent é um assistente de IA com foco em terminal, criado para conversas práticas, uso de tools orientadas a tarefas e histórico persistente de interações. Hoje o produto está centrado em um fluxo simples de CLI no qual o usuário conversa com o agente, acompanha logs em tempo real e recebe uma resposta final salva no banco.
 
-## Quick View
+## Visão Rápida
 
-- Surface: terminal CLI
-- Current focus: stable assistant loop with tools and persistence
-- Best entry for project docs: [`docs/CONTEXT.md`](./docs/CONTEXT.md)
-- Best entry for product direction: [`docs/PRD.md`](./docs/PRD.md)
+- Superfície principal: terminal CLI
+- Foco atual: loop do assistente estável com tools e persistência
 
 ## Stack
 
-- Python 3.11+
-- Typer
-- LangChain and LangGraph
-- Groq
-- SQLAlchemy
-- PostgreSQL or SQLite
+- Python 3.11+: base da aplicação e da CLI.
+- Typer: estrutura os comandos de terminal e o ciclo de interação com o usuário.
+- Pydantic e pydantic-settings: carregam, validam e centralizam as configurações vindas do `.env`.
+- LangChain e LangGraph: organizam o agente, o uso de tools e o fluxo de execução entre entrada, raciocínio e resposta final.
+- Groq: provedor do modelo de linguagem usado pelo agente.
+- SQLAlchemy: camada ORM e de acesso ao banco para persistir tasks e execuções.
+- psycopg: driver usado pelo SQLAlchemy para conectar a aplicação ao PostgreSQL.
+- PostgreSQL: banco de dados oficial do projeto para salvar tasks, histórico de execuções e dados futuros da aplicação.
 
-## Installation
+## Instalação
 
-1. Install the project in editable mode:
+1. Instale o projeto em modo editável:
    `py -m pip install -e .`
-2. Copy `.env.example` to `.env`
-3. Set your environment values, especially:
+2. Copie `.env.example` para `.env`
+3. Defina os valores de ambiente, principalmente:
    - `DATABASE_URL`
    - `GROQ_API_KEY`
-   - `MODEL_NAME` if you want to override the default model
+   - `MODEL_NAME`, se quiser trocar o modelo padrão
 
-## Running The Project
+O projeto usa apenas PostgreSQL. O valor padrão atual de `DATABASE_URL` já aponta para uma instância PostgreSQL local.
 
-Start the terminal app with:
+## Como Rodar
+
+Inicie a aplicação com:
 
 `terminal-agent`
 
-Inside the terminal:
+Dentro do terminal:
 
-- use `/help` to show local commands
-- use `/exit` to leave the application
+- use `/help` para mostrar os comandos locais
+- use `/exit` para sair da aplicação
 
-You can also run the module directly:
+Você também pode rodar o módulo diretamente:
 
 `py -m app.cli`
 
-## Terminal Example
+## Exemplo no Terminal
 
 ```text
->> create a task to study English every day
-voce: create a task to study English every day
+>> criar uma task para estudar inglês todos os dias
+voce: criar uma task para estudar inglês todos os dias
 log: agent: usando modelo
 log: modelo: chamando task_create(task_key='study-english', input_text='Study English every day', is_active=True)
 log: task_create: {"status":"created", ...}
 terminal agent: Criei a task "study-english" para estudar inglês todos os dias.
 ```
-
-## Docs
-
-- [Product direction](./docs/PRD.md)
-- [Architecture](./docs/ARCH.md)
-- [Features and roadmap](./docs/FEATURES.md)
-- [Feature briefs](./docs/feature/README.md)
-- [Current context](./docs/CONTEXT.md)
