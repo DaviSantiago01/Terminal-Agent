@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 import time
+from uuid import uuid4
 
 import typer
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
-from rich import box
 
 from app.agent import execute_agent
 from app.config import get_settings
@@ -17,14 +18,14 @@ console = Console()
 
 
 def _print_banner() -> None:
-    """Renderiza o painel inicial mostrado quando a aplicação começa."""
+    """Renderiza o painel inicial mostrado quando a aplicacao comeca."""
 
     console.print(
         Panel(
             "[bold]Terminal Agent[/bold]\n"
             "Agente: Planner\n\n"
             "[dim]Chat de terminal para planejar tasks, revisar ideias e conversar com o agente.[/dim]\n"
-            "[dim]Use /help para ver como usar o chat e conhecer o comando disponível.[/dim]",
+            "[dim]Use /help para ver como usar o chat e conhecer o comando disponivel.[/dim]",
             title="Terminal Agent",
             border_style="#d97706",
             box=box.ROUNDED,
@@ -46,18 +47,18 @@ def _print_help() -> None:
 
 
 def _print_user_message(message: str) -> None:
-    """Renderiza a mensagem do usuário no estilo visual do terminal."""
+    """Renderiza a mensagem do usuario no estilo visual do terminal."""
 
     console.print(f"[bold white]voce:[/bold white] [white]{message}[/white]")
 
 
 def _normalize_user_message(message: str) -> str:
-    """Limpa a mensagem do usuário removendo espaços excessivos e caracteres de controle simples."""
+    """Limpa a mensagem do usuario removendo espacos excessivos e caracteres de controle simples."""
 
-    # Mantém quebras de linha úteis, mas remove outros caracteres de controle invisíveis.
+    # Mantem quebras de linha uteis, mas remove outros caracteres de controle invisiveis.
     sanitized = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", message)
 
-    # Limpa espaços sobrando no começo e no fim de cada linha.
+    # Limpa espacos sobrando no comeco e no fim de cada linha.
     lines = [line.strip() for line in sanitized.splitlines()]
 
     # Remove linhas vazias repetidas e normaliza blocos de texto.
@@ -74,7 +75,7 @@ def _normalize_user_message(message: str) -> str:
 
 
 def _can_process_message(last_message_at: float | None, min_interval_seconds: float) -> tuple[bool, float]:
-    """Verifica se já passou o intervalo mínimo entre duas mensagens do usuário."""
+    """Verifica se ja passou o intervalo minimo entre duas mensagens do usuario."""
 
     if last_message_at is None:
         return True, 0.0
@@ -85,7 +86,7 @@ def _can_process_message(last_message_at: float | None, min_interval_seconds: fl
 
 
 def _print_rate_limit_warning(remaining_seconds: float) -> None:
-    """Mostra um aviso curto quando o usuário envia mensagens rápido demais."""
+    """Mostra um aviso curto quando o usuario envia mensagens rapido demais."""
 
     console.print(
         f"[yellow]Espere {remaining_seconds:.1f}s antes de enviar outra mensagem.[/yellow]"
@@ -93,7 +94,7 @@ def _print_rate_limit_warning(remaining_seconds: float) -> None:
 
 
 def _handle_slash_command(command: str) -> bool:
-    """Trata comandos locais que não precisam chamar o agente de IA."""
+    """Trata comandos locais que nao precisam chamar o agente de IA."""
 
     normalized = command.strip().lower()
     if normalized in {"/exit", "/quit"}:
@@ -113,18 +114,25 @@ def _print_agent_response(output: str) -> None:
 
 
 def _print_agent_log(message: str) -> None:
-    """Renderiza logs internos para o usuário acompanhar os passos do agente."""
+    """Renderiza logs internos para o usuario acompanhar os passos do agente."""
 
     console.print(f"[dim #9ca3af]log:[/dim #9ca3af] [#9ca3af]{message}[/#9ca3af]")
 
 
+def _create_terminal_session_id() -> str:
+    """Gera um identificador unico para agrupar mensagens da mesma execucao da CLI."""
+
+    return uuid4().hex
+
+
 def run_chat() -> None:
-    """Loop principal do terminal: lê entrada, executa o agente, salva e imprime."""
+    """Loop principal do terminal: le entrada, executa o agente, salva e imprime."""
 
     settings = get_settings()
     init_db()
     _print_banner()
     last_message_at: float | None = None
+    session_id = _create_terminal_session_id()
 
     while True:
         try:
@@ -154,23 +162,36 @@ def run_chat() -> None:
         last_message_at = time.monotonic()
         _print_user_message(user_input)
 
+        status = "success"
+        error_text: str | None = None
+
         try:
             execution = execute_agent(user_input, log_callback=_print_agent_log)
             output = execution.output
         except Exception as exc:
+            status = "error"
+            error_text = str(exc)
             output = f"Erro ao executar o agente: {exc}"
 
         try:
-            save_result("terminal", user_input, output)
+            save_result(
+                task_id="terminal",
+                session_id=session_id,
+                channel="terminal",
+                status=status,
+                input_text=user_input,
+                output_text=output,
+                error_text=error_text,
+            )
         except Exception as exc:
-            console.print(f"[yellow]Aviso: não foi possível salvar o resultado: {exc}[/yellow]")
+            console.print(f"[yellow]Aviso: nao foi possivel salvar o resultado: {exc}[/yellow]")
 
         _print_agent_response(output)
 
 
 @cli.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
-    """Ponto de entrada do Typer usado pelo módulo e pelo comando instalado."""
+    """Ponto de entrada do Typer usado pelo modulo e pelo comando instalado."""
 
     if ctx.invoked_subcommand is None:
         run_chat()
