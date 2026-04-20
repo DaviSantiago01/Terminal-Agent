@@ -29,8 +29,6 @@ docs/
 
 # Local databases
 *.db
-*.sqlite
-*.sqlite3
 
 # IDEs and editors
 .vscode/
