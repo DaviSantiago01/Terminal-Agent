@@ -1,6 +1,6 @@
 from fastapi import Header, HTTPException, status
 
-from apps.api.services.auth_service import InvalidSessionError, get_identity_from_session_token
+from apps.backend.services.auth_service import InvalidSessionError, get_identity_from_session_token
 
 
 def extract_bearer_token(authorization: str | None) -> str:

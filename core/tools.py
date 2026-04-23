@@ -12,7 +12,7 @@ warnings.filterwarnings(
 
 from langchain_core.tools import tool
 
-from app.db import (
+from core.db import (
     TaskAlreadyExistsError,
     create_task as create_task_record,
     delete_task as delete_task_record,

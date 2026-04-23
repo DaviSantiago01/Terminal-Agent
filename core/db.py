@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
-from app.config import get_settings
+from core.config import get_settings
 
 
 class Base(DeclarativeBase):

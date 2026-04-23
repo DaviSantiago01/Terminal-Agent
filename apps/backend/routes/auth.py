@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
-from apps.api.deps.auth import extract_bearer_token, get_current_identity
-from apps.api.schemas.auth import AuthMeResponse, LoginRequest, LoginResponse, LogoutResponse, UserResponse
-from apps.api.services.auth_service import (
+from apps.backend.deps.auth import extract_bearer_token, get_current_identity
+from apps.backend.schemas.auth import AuthMeResponse, LoginRequest, LoginResponse, LogoutResponse, UserResponse
+from apps.backend.services.auth_service import (
     InvalidCredentialsError,
     InvalidSessionError,
     login_with_email_and_password,

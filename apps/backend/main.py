@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from apps.api.routes.auth import router as auth_router
-from apps.api.routes.health import router as health_router
+from apps.backend.routes.auth import router as auth_router
+from apps.backend.routes.health import router as health_router
 
 app = FastAPI(
     title="Terminal Agent API",

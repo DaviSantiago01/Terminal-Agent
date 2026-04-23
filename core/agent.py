@@ -15,8 +15,8 @@ warnings.filterwarnings(
 from langchain.agents import create_agent as create_langchain_agent
 from langchain_groq import ChatGroq
 
-from app.config import get_settings
-from app.tools import TOOLS
+from core.config import get_settings
+from core.tools import TOOLS
 
 LogCallback = Callable[[str], None]
 
