@@ -34,7 +34,7 @@ def _serialize_task(task: object) -> dict[str, object]:
 
 
 @tool("task_list")
-def tasks_list(active_only: bool = False) -> str:
+def task_list(active_only: bool = False) -> str:
     """Lista tasks e retorna JSON estruturado para o agente interpretar."""
 
     # O modelo vai ler este JSON e decidir como explicar o resultado ao usuário.
@@ -91,4 +91,6 @@ def task_delete(task_key: str) -> str:
     return json.dumps({"status": "deleted", "task_key": task_key}, ensure_ascii=False)
 
 
-TOOLS = [tasks_list, task_get, task_create, task_update, task_delete]
+tasks_list = task_list
+
+TOOLS = [task_list, task_get, task_create, task_update, task_delete]

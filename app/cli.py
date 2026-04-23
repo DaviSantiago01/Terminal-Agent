@@ -8,6 +8,7 @@ import typer
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
+from sqlalchemy.exc import OperationalError
 
 from app.agent import execute_agent
 from app.config import get_settings
@@ -119,6 +120,53 @@ def _print_agent_log(message: str) -> None:
     console.print(f"[dim #9ca3af]log:[/dim #9ca3af] [#9ca3af]{message}[/#9ca3af]")
 
 
+def _sanitize_console_text(message: str) -> str:
+    """Adapta texto para consoles Windows que nao suportam todos os caracteres."""
+
+    encoding = console.encoding or "utf-8"
+    return message.encode(encoding, errors="replace").decode(encoding, errors="replace")
+
+
+def _print_startup_error(message: str) -> None:
+    """Mostra um erro de inicializacao de forma curta e legivel."""
+
+    safe_message = _sanitize_console_text(message)
+    console.print(
+        Panel(
+            f"[bold red]Nao foi possivel iniciar o Terminal Agent[/bold red]\n\n{safe_message}",
+            title="Erro de inicializacao",
+            border_style="red",
+            box=box.ROUNDED,
+        )
+    )
+
+
+def _initialize_runtime() -> tuple[object, str] | None:
+    """Carrega configuracoes e inicializa o banco com mensagens mais amigaveis."""
+
+    try:
+        settings = get_settings()
+    except Exception as exc:
+        _print_startup_error(f"Falha ao carregar configuracoes: {exc}")
+        return None
+
+    try:
+        init_db()
+    except OperationalError as exc:
+        _print_startup_error(
+            "Falha ao conectar no PostgreSQL.\n\n"
+            f"Detalhe: {exc.orig}\n\n"
+            "Verifique se o servidor esta rodando e se o database definido em "
+            "`DATABASE_URL` ja existe."
+        )
+        return None
+    except Exception as exc:
+        _print_startup_error(f"Falha ao inicializar o banco: {exc}")
+        return None
+
+    return settings, _create_terminal_session_id()
+
+
 def _create_terminal_session_id() -> str:
     """Gera um identificador unico para agrupar mensagens da mesma execucao da CLI."""
 
@@ -128,11 +176,13 @@ def _create_terminal_session_id() -> str:
 def run_chat() -> None:
     """Loop principal do terminal: le entrada, executa o agente, salva e imprime."""
 
-    settings = get_settings()
-    init_db()
+    runtime = _initialize_runtime()
+    if runtime is None:
+        raise typer.Exit(code=1)
+
+    settings, session_id = runtime
     _print_banner()
     last_message_at: float | None = None
-    session_id = _create_terminal_session_id()
 
     while True:
         try:
