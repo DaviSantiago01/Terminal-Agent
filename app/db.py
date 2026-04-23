@@ -76,6 +76,14 @@ def init_db() -> None:
     _ensure_run_items_columns()
 
 
+def ping_database() -> bool:
+    """Executa uma consulta simples para validar conectividade com o banco."""
+
+    with get_engine().connect() as connection:
+        connection.execute(text("SELECT 1"))
+    return True
+
+
 def _ensure_run_items_columns() -> None:
     """Adiciona colunas novas em `run_items` quando o banco ja existia antes da feature."""
 
