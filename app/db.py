@@ -1,7 +1,18 @@
 from datetime import datetime
 from functools import lru_cache
 
-from sqlalchemy import DateTime, Integer, String, Text, create_engine, inspect, select, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    inspect,
+    select,
+    text,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -16,6 +27,12 @@ class Base(DeclarativeBase):
 
 class TaskAlreadyExistsError(Exception):
     """Erro usado quando uma task nova tenta reutilizar um task_key ja existente."""
+
+    pass
+
+
+class UserAlreadyExistsError(Exception):
+    """Erro usado quando um email tenta ser criado duas vezes."""
 
     pass
 
@@ -46,6 +63,32 @@ class TaskItem(Base):
     input_text: Mapped[str] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class User(Base):
+    """Representa uma conta autenticavel para as superficies web futuras."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(512))
+    role: Mapped[str] = mapped_column(String(32), default="user", index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AuthSession(Base):
+    """Armazena sessoes autenticadas persistidas em banco."""
+
+    __tablename__ = "auth_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    session_token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 @lru_cache(maxsize=1)
@@ -82,6 +125,101 @@ def ping_database() -> bool:
     with get_engine().connect() as connection:
         connection.execute(text("SELECT 1"))
     return True
+
+
+def create_user(
+    email: str,
+    password_hash: str,
+    role: str = "user",
+    is_active: bool = True,
+) -> User:
+    """Cria um usuario autenticavel."""
+
+    session = create_session()
+    try:
+        user = User(
+            email=email,
+            password_hash=password_hash,
+            role=role,
+            is_active=is_active,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+    except IntegrityError as exc:
+        session.rollback()
+        raise UserAlreadyExistsError(email) from exc
+    finally:
+        session.close()
+
+
+def get_user_by_email(email: str) -> User | None:
+    """Busca um usuario pelo email."""
+
+    session = create_session()
+    try:
+        statement = select(User).where(User.email == email)
+        return session.scalars(statement).first()
+    finally:
+        session.close()
+
+
+def get_user_by_id(user_id: int) -> User | None:
+    """Busca um usuario pelo identificador."""
+
+    session = create_session()
+    try:
+        statement = select(User).where(User.id == user_id)
+        return session.scalars(statement).first()
+    finally:
+        session.close()
+
+
+def create_auth_session(user_id: int, session_token_hash: str, expires_at: datetime) -> AuthSession:
+    """Cria uma sessao autenticada persistida."""
+
+    session = create_session()
+    try:
+        auth_session = AuthSession(
+            user_id=user_id,
+            session_token_hash=session_token_hash,
+            expires_at=expires_at,
+        )
+        session.add(auth_session)
+        session.commit()
+        session.refresh(auth_session)
+        return auth_session
+    finally:
+        session.close()
+
+
+def get_auth_session_by_token_hash(session_token_hash: str) -> AuthSession | None:
+    """Busca uma sessao autenticada pelo hash do token."""
+
+    session = create_session()
+    try:
+        statement = select(AuthSession).where(AuthSession.session_token_hash == session_token_hash)
+        return session.scalars(statement).first()
+    finally:
+        session.close()
+
+
+def revoke_auth_session_by_token_hash(session_token_hash: str) -> bool:
+    """Revoga a sessao atual caso ela exista."""
+
+    session = create_session()
+    try:
+        auth_session = session.scalars(
+            select(AuthSession).where(AuthSession.session_token_hash == session_token_hash)
+        ).first()
+        if auth_session is None or auth_session.revoked_at is not None:
+            return False
+        auth_session.revoked_at = datetime.utcnow()
+        session.commit()
+        return True
+    finally:
+        session.close()
 
 
 def _ensure_run_items_columns() -> None:
