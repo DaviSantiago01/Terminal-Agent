@@ -45,7 +45,7 @@ Dentro do terminal:
 
 Você também pode rodar o módulo diretamente:
 
-`py -m app.cli`
+`py -m core.cli`
 
 ## Exemplo no Terminal
 

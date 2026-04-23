@@ -47,7 +47,7 @@ Inside the terminal:
 
 You can also run the module directly:
 
-`py -m app.cli`
+`py -m core.cli`
 
 ## Terminal Example
 
