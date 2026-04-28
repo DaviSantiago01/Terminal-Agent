@@ -25,7 +25,10 @@ pip-wheel-metadata/
 # Local environment
 .env
 .env.local
+.github/
 docs/
+AGENTS.md
+docs/AGENTS.md
 
 # Local databases
 *.db
