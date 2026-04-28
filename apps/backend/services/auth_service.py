@@ -6,7 +6,7 @@ import hashlib
 import hmac
 import secrets
 
-from core.db import (
+from core.crud.auth import (
     create_auth_session,
     get_auth_session_by_token_hash,
     get_user_by_email,

@@ -12,7 +12,8 @@ from sqlalchemy.exc import OperationalError
 
 from core.agent import execute_agent
 from core.config import get_settings
-from core.db import init_db, save_result
+from core.crud.run import save_result
+from core.db import init_db
 
 cli = typer.Typer(add_completion=False, help="Chat de terminal do agente")
 console = Console()
