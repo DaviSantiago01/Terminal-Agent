@@ -11,7 +11,7 @@ from rich.panel import Panel
 from sqlalchemy.exc import OperationalError
 
 from core.agent import execute_agent
-from core.config import get_settings
+from core.config import Settings, get_settings
 from core.crud.run import save_result
 from core.db import init_db
 
@@ -41,6 +41,7 @@ def _print_help() -> None:
     console.print(
         Panel.fit(
             "[bold]/help[/bold] - mostra esta ajuda\n"
+            "[bold]/clear[/bold] - limpa o terminal\n"
             "[bold]/exit[/bold] - sai do chat",
             title="Ajuda",
             border_style="blue",
@@ -66,17 +67,22 @@ def _normalize_user_message(message: str) -> str:
     # Remove linhas vazias repetidas e normaliza blocos de texto.
     compact_lines: list[str] = []
     last_line_was_empty = False
+
     for line in lines:
         is_empty = line == ""
         if is_empty and last_line_was_empty:
             continue
+
         compact_lines.append(line)
         last_line_was_empty = is_empty
 
     return "\n".join(compact_lines).strip()
 
 
-def _can_process_message(last_message_at: float | None, min_interval_seconds: float) -> tuple[bool, float]:
+def _can_process_message(
+    last_message_at: float | None,
+    min_interval_seconds: float,
+) -> tuple[bool, float]:
     """Verifica se ja passou o intervalo minimo entre duas mensagens do usuario."""
 
     if last_message_at is None:
@@ -84,6 +90,7 @@ def _can_process_message(last_message_at: float | None, min_interval_seconds: fl
 
     elapsed = time.monotonic() - last_message_at
     remaining = min_interval_seconds - elapsed
+
     return remaining <= 0, max(0.0, remaining)
 
 
@@ -99,10 +106,17 @@ def _handle_slash_command(command: str) -> bool:
     """Trata comandos locais que nao precisam chamar o agente de IA."""
 
     normalized = command.strip().lower()
+
     if normalized in {"/exit", "/quit"}:
         return False
+
     if normalized == "/help":
         _print_help()
+        return True
+
+    if normalized == "/clear":
+        console.clear()
+        _print_banner()
         return True
 
     console.print("[yellow]Comando desconhecido. Use /help.[/yellow]")
@@ -112,7 +126,9 @@ def _handle_slash_command(command: str) -> bool:
 def _print_agent_response(output: str) -> None:
     """Renderiza a resposta final devolvida pelo agente."""
 
-    console.print(f"[bold #d1d5db]terminal agent:[/bold #d1d5db] [#d1d5db]{output}[/#d1d5db]")
+    console.print(
+        f"[bold #d1d5db]terminal agent:[/bold #d1d5db] [#d1d5db]{output}[/#d1d5db]"
+    )
 
 
 def _print_agent_log(message: str) -> None:
@@ -132,6 +148,7 @@ def _print_startup_error(message: str) -> None:
     """Mostra um erro de inicializacao de forma curta e legivel."""
 
     safe_message = _sanitize_console_text(message)
+
     console.print(
         Panel(
             f"[bold red]Nao foi possivel iniciar o Terminal Agent[/bold red]\n\n{safe_message}",
@@ -142,7 +159,7 @@ def _print_startup_error(message: str) -> None:
     )
 
 
-def _initialize_runtime() -> tuple[object, str] | None:
+def _initialize_runtime() -> tuple[Settings, str] | None:
     """Carrega configuracoes e inicializa o banco com mensagens mais amigaveis."""
 
     try:
@@ -178,11 +195,13 @@ def run_chat() -> None:
     """Loop principal do terminal: le entrada, executa o agente, salva e imprime."""
 
     runtime = _initialize_runtime()
+
     if runtime is None:
         raise typer.Exit(code=1)
 
     settings, session_id = runtime
     _print_banner()
+
     last_message_at: float | None = None
 
     while True:
@@ -193,19 +212,23 @@ def run_chat() -> None:
             break
 
         user_input = _normalize_user_message(raw_user_input)
+
         if not user_input:
             continue
 
         if user_input.startswith("/"):
             keep_running = _handle_slash_command(user_input)
+
             if not keep_running:
                 break
+
             continue
 
         can_process, remaining_seconds = _can_process_message(
             last_message_at,
             settings.min_message_interval_seconds,
         )
+
         if not can_process:
             _print_rate_limit_warning(remaining_seconds)
             continue
@@ -235,7 +258,9 @@ def run_chat() -> None:
                 error_text=error_text,
             )
         except Exception as exc:
-            console.print(f"[yellow]Aviso: nao foi possivel salvar o resultado: {exc}[/yellow]")
+            console.print(
+                f"[yellow]Aviso: nao foi possivel salvar o resultado: {exc}[/yellow]"
+            )
 
         _print_agent_response(output)
 
