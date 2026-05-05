@@ -17,7 +17,6 @@ class UserResponse(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    session_token: str
     expires_at: datetime
     user: UserResponse
 
