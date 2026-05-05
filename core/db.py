@@ -1,10 +1,12 @@
 from functools import lru_cache
+from pathlib import Path
 
-from sqlalchemy import create_engine, inspect, text
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from core.config import get_settings
-from core.models import Base
 
 
 @lru_cache(maxsize=1)
@@ -29,10 +31,9 @@ def create_session() -> Session:
 
 
 def init_db() -> None:
-    """Cria as tabelas do banco e ajusta colunas novas quando necessario."""
+    """Aplica as migrations do Alembic ate a versao mais recente."""
 
-    Base.metadata.create_all(bind=get_engine())
-    _ensure_run_items_columns()
+    command.upgrade(_get_alembic_config(), "head")
 
 
 def ping_database() -> bool:
@@ -43,32 +44,11 @@ def ping_database() -> bool:
     return True
 
 
-def _ensure_run_items_columns() -> None:
-    """Adiciona colunas novas em `run_items` quando o banco ja existia antes da feature."""
+def _get_alembic_config() -> Config:
+    """Monta a configuracao do Alembic apontando para os arquivos do repositorio."""
 
-    engine = get_engine()
-    inspector = inspect(engine)
-
-    if "run_items" not in inspector.get_table_names():
-        return
-
-    existing_columns = {column["name"] for column in inspector.get_columns("run_items")}
-    pending_columns = {
-        "session_id": "ALTER TABLE run_items ADD COLUMN session_id VARCHAR(64) NOT NULL DEFAULT ''",
-        "user_id": "ALTER TABLE run_items ADD COLUMN user_id INTEGER NULL",
-        "channel": "ALTER TABLE run_items ADD COLUMN channel VARCHAR(32) NOT NULL DEFAULT 'terminal'",
-        "status": "ALTER TABLE run_items ADD COLUMN status VARCHAR(16) NOT NULL DEFAULT 'success'",
-        "error_text": "ALTER TABLE run_items ADD COLUMN error_text TEXT NULL",
-    }
-
-    missing_statements = [
-        statement
-        for column_name, statement in pending_columns.items()
-        if column_name not in existing_columns
-    ]
-    if not missing_statements:
-        return
-
-    with engine.begin() as connection:
-        for statement in missing_statements:
-            connection.execute(text(statement))
+    base_dir = Path(__file__).resolve().parent.parent
+    config = Config(str(base_dir / "alembic.ini"))
+    config.set_main_option("script_location", str(base_dir / "alembic"))
+    config.set_main_option("sqlalchemy.url", get_settings().database_url)
+    return config
