@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from core.db import create_session
-from core.models.task import TaskItem
+from apps.backend.core.db import create_session
+from apps.backend.models.task import TaskItem
 
 
 class TaskAlreadyExistsError(Exception):

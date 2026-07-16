@@ -1,5 +1,5 @@
-from core.db import create_session
-from core.models.run import RunItem
+from apps.backend.core.db import create_session
+from apps.backend.models.run import RunItem
 
 
 def save_result(

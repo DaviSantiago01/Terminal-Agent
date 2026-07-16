@@ -10,10 +10,10 @@ from rich.console import Console
 from rich.panel import Panel
 from sqlalchemy.exc import OperationalError
 
-from core.agent import execute_agent
-from core.config import Settings, get_settings
-from core.crud.run import save_result
-from core.db import init_db
+from apps.backend.core.agent import execute_agent
+from apps.backend.core.config import Settings, get_settings
+from apps.backend.repositories.run import save_result
+from apps.backend.core.db import init_db
 
 cli = typer.Typer(add_completion=False, help="Chat de terminal do agente")
 console = Console()

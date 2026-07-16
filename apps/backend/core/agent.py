@@ -15,14 +15,14 @@ warnings.filterwarnings(
 from langchain.agents import create_agent as create_langchain_agent
 from langchain_groq import ChatGroq
 
-from core.config import get_settings
-from core.tools import TOOLS
+from apps.backend.core.config import get_settings
+from apps.backend.core.tools import TOOLS
 
 LogCallback = Callable[[str], None]
 
 
 @dataclass
-class AgentExecution:
+class AgentExecution:   
     """Objeto simples com a resposta final e os logs de uma execução."""
 
     output: str
@@ -60,7 +60,6 @@ def _emit_log(logs: list[str], callback: LogCallback | None, message: str) -> No
     if callback is not None:
         callback(message)
 
-
 def create_agent():
     """Monta o agente com modelo, tools e instruções principais."""
 
@@ -77,7 +76,7 @@ def create_agent():
     )
 
     system_prompt = (
-        "Voce e um assistente de planejamento pessoal em portugues do Brasil. "
+       "Voce e um assistente de planejamento pessoal em portugues do Brasil. "
         "Voce decide quando faz sentido chamar task_list, task_get, task_create, task_update e task_delete. "
         "Chame ferramentas apenas quando isso realmente ajudar a resolver o pedido do usuario. "
         "As ferramentas retornam JSON estruturado com campos como status, task, items, count e task_key. "

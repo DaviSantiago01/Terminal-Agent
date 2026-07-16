@@ -23,10 +23,10 @@ dependencies = [
 ]
 
 [project.scripts]
-terminal-agent = "core.cli:cli"
-agent-cli = "core.cli:cli"
+terminal-agent = "apps.backend.core.cli:cli"
+agent-cli = "apps.backend.core.cli:cli"
 terminal-agent-backend = "apps.backend.main:run"
 terminal-agent-api = "apps.backend.main:run"
 
 [tool.setuptools.packages.find]
-include = ["core", "core.*", "apps", "apps.*"]
+include = ["apps", "apps.*"]

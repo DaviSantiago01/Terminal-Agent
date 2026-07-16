@@ -1,11 +1,11 @@
-import os
 from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from core.db import create_session
-from core.models.auth import AuthSession, User
+from apps.backend.core.config import get_settings
+from apps.backend.core.db import create_session
+from apps.backend.models.auth import AuthSession, User
 
 
 class UserAlreadyExistsError(Exception):
@@ -28,7 +28,7 @@ def create_user(
 ) -> User:
     """
     Escritor Oficial de Usuarios no Banco de Dados.
-    
+
     Alem de inserir, ela contem a barreira absoluta de Seguranca ('Super Admin Limit'):
     Qualquer tentativa de criar usuario com role="admin" verificara se o e-mail
     bate milimetricamente com a variavel SUPER_ADMIN_EMAIL protegida no Servidor.
@@ -37,11 +37,11 @@ def create_user(
         email (str): E-mail de cadastro
         password_hash (str): Senha JA criptografada com scrypt
         role (str, optional): Papeis do tipo ("user" ou "admin"). Padrão eh "user".
-        is_active (bool, optional): Bloqueia/Libera o login na criacao. 
+        is_active (bool, optional): Bloqueia/Libera o login na criacao.
 
     Returns:
         User: A linha de usuario que acabou de nascer no Banco de Dados.
-        
+
     Raises:
         UserRoleForbiddenError: Se um e-mail aleatorio tentar roubar o trono de admin.
         UserAlreadyExistsError: Se o e-mail ja existe na base.
@@ -50,7 +50,7 @@ def create_user(
     normalized_email = email.lower().strip()
 
     if role == "admin":
-        super_admin = os.environ.get("SUPER_ADMIN_EMAIL")
+        super_admin = get_settings().super_admin_email
         if not super_admin or normalized_email != super_admin.lower().strip():
             raise UserRoleForbiddenError(f"Apenas {super_admin} pode ser admin.")
 

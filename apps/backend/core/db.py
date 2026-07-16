@@ -6,7 +6,7 @@ from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
-from core.config import get_settings
+from apps.backend.core.config import get_settings
 
 
 @lru_cache(maxsize=1)
@@ -47,8 +47,13 @@ def ping_database() -> bool:
 def _get_alembic_config() -> Config:
     """Monta a configuracao do Alembic apontando para os arquivos do repositorio."""
 
-    base_dir = Path(__file__).resolve().parent.parent
-    config = Config(str(base_dir / "alembic.ini"))
-    config.set_main_option("script_location", str(base_dir / "alembic"))
+    # __file__ = apps/backend/core/db.py
+    # parent        → apps/backend/core/
+    # parent.parent → apps/backend/        (migrations/ fica aqui)
+    # parent x3     → project root         (alembic.ini fica aqui)
+    backend_dir = Path(__file__).resolve().parent.parent
+    project_root = backend_dir.parent.parent
+    config = Config(str(project_root / "alembic.ini"))
+    config.set_main_option("script_location", str(backend_dir / "migrations"))
     config.set_main_option("sqlalchemy.url", get_settings().database_url)
     return config

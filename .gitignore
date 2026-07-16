@@ -26,9 +26,11 @@ pip-wheel-metadata/
 .env
 .env.local
 .github/
-docs/
-AGENTS.md
-docs/AGENTS.md
+
+# Node
+node_modules/
+.next/
+.turbo/
 
 # Local databases
 *.db

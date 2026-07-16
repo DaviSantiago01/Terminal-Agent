@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from core.db import ping_database
+from apps.backend.core.db import ping_database
 
 router = APIRouter(tags=["health"])
 
