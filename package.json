@@ -1,0 +1,12 @@
+{
+  "name": "terminal-agent",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names \"frontend,backend\" --prefix-colors \"blue,green\" \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --prefix apps/frontend",
+    "dev:backend": "py -m apps.backend.main"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

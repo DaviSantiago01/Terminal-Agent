@@ -6,8 +6,10 @@ import hashlib
 import hmac
 import secrets
 
-from core.crud.auth import (
+from apps.backend.repositories.auth import (
+    UserAlreadyExistsError,
     create_auth_session,
+    create_user,
     get_auth_session_by_token_hash,
     get_user_by_email,
     get_user_by_id,
@@ -23,6 +25,10 @@ class InvalidCredentialsError(Exception):
 
 class InvalidSessionError(Exception):
     """Sessao ausente, expirada ou revogada."""
+
+
+class UserAlreadyExistsServiceError(Exception):
+    """Usuario ja existe e nao pode ser cadastrado novamente."""
 
 
 @dataclass
@@ -180,6 +186,43 @@ def login_with_email_and_password(email: str, password: str) -> LoginResult:
         expires_at=expires_at,
     )
     
+    return LoginResult(
+        session_token=session_token,
+        expires_at=expires_at,
+        identity=build_identity(user),
+    )
+
+
+def register_with_email_and_password(email: str, password: str) -> LoginResult:
+    """
+    Cadastra um usuario comum e devolve uma sessao autenticada pronta para uso.
+
+    O cadastro ja normaliza o e-mail, gera hash da senha e cria a sessao opaca
+    para o frontend entrar no produto sem uma segunda chamada de login.
+    """
+
+    normalized_email = email.strip().lower()
+    password_hash = hash_password(password)
+
+    try:
+        user = create_user(
+            email=normalized_email,
+            password_hash=password_hash,
+            role="user",
+            is_active=True,
+        )
+    except UserAlreadyExistsError as exc:
+        raise UserAlreadyExistsServiceError("user_already_exists") from exc
+
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=DEFAULT_AUTH_SESSION_TTL_HOURS)
+
+    create_auth_session(
+        user_id=user.id,
+        session_token_hash=hash_session_token(session_token),
+        expires_at=expires_at,
+    )
+
     return LoginResult(
         session_token=session_token,
         expires_at=expires_at,
